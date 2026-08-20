@@ -737,6 +737,9 @@ impl std::fmt::Display for UsageLimitReachedError {
 
 fn retry_suffix(resets_at: Option<&DateTime<Utc>>) -> String {
     if let Some(resets_at) = resets_at {
+        if *resets_at <= now_for_retry() {
+            return " Your limit has already been reset.".to_string();
+        }
         let formatted = format_retry_timestamp(resets_at);
         format!(" Try again at {formatted}.")
     } else {
@@ -746,6 +749,9 @@ fn retry_suffix(resets_at: Option<&DateTime<Utc>>) -> String {
 
 fn retry_suffix_after_or(resets_at: Option<&DateTime<Utc>>) -> String {
     if let Some(resets_at) = resets_at {
+        if *resets_at <= now_for_retry() {
+            return ". Your limit has already been reset".to_string();
+        }
         let formatted = format_retry_timestamp(resets_at);
         format!(" or try again at {formatted}.")
     } else {

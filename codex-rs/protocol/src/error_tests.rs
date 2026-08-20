@@ -695,3 +695,53 @@ fn usage_limit_reached_with_promo_message() {
         assert_eq!(err.to_string(), expected);
     });
 }
+
+#[test]
+fn usage_limit_reached_with_expired_reset_shows_already_reset() {
+    let base = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+    let resets_at = base - ChronoDuration::hours(1);
+    with_now_override(base, move || {
+        let err = UsageLimitReachedError {
+            plan_type: Some(PlanType::Known(KnownPlan::Plus)),
+            resets_at: Some(resets_at),
+            rate_limits: Some(Box::new(rate_limit_snapshot())),
+            promo_message: None,
+            rate_limit_reached_type: None,
+        };
+        let expected = "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits. Your limit has already been reset";
+        assert_eq!(err.to_string(), expected);
+    });
+}
+
+#[test]
+fn usage_limit_reached_with_expired_reset_shows_already_reset_for_retry_suffix() {
+    let base = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+    let resets_at = base - ChronoDuration::minutes(5);
+    with_now_override(base, move || {
+        let err = UsageLimitReachedError {
+            plan_type: None,
+            resets_at: Some(resets_at),
+            rate_limits: Some(Box::new(rate_limit_snapshot())),
+            promo_message: None,
+            rate_limit_reached_type: None,
+        };
+        let expected = "You've hit your usage limit. Your limit has already been reset.";
+        assert_eq!(err.to_string(), expected);
+    });
+}
+
+#[test]
+fn usage_limit_reached_with_equal_timestamp_shows_already_reset() {
+    let base = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+    with_now_override(base, move || {
+        let err = UsageLimitReachedError {
+            plan_type: None,
+            resets_at: Some(base),
+            rate_limits: Some(Box::new(rate_limit_snapshot())),
+            promo_message: None,
+            rate_limit_reached_type: None,
+        };
+        let expected = "You've hit your usage limit. Your limit has already been reset.";
+        assert_eq!(err.to_string(), expected);
+    });
+}
